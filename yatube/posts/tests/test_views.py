@@ -307,6 +307,14 @@ class FollowTestsPosts(TestCase):
             args=[FollowTestsPosts.author.username]))
         self.assertEqual(Follow.objects.count(), count_follow)
 
+    def test_follow_user(self):
+        """Проверка того что пользователь не может подписаться сам на себя."""
+        count_follow = Follow.objects.count()
+        self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            args=[FollowTestsPosts.user.username]))
+        self.assertEqual(Follow.objects.count(), count_follow)
+
     def test_follow_index(self):
         """Тест проверки ленты подписок."""
         self.authorized_client.get(reverse(
