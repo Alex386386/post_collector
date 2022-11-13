@@ -323,12 +323,11 @@ class FollowTestsPosts(TestCase):
             args=[FollowTestsPosts.author.username]))
         self.assertEqual(Follow.objects.count(),
                          count_follow + OBJECT_MAGNIFICATION_FACTOR)
+        new_count_follow = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
             args=[FollowTestsPosts.author.username]))
-        self.assertEqual(Follow.objects.count(),
-                         count_follow + OBJECT_MAGNIFICATION_FACTOR)
-
+        self.assertEqual(Follow.objects.count(), new_count_follow)
 
     def test_follow_index(self):
         """Тест проверки ленты подписок."""
