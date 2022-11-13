@@ -308,12 +308,27 @@ class FollowTestsPosts(TestCase):
         self.assertEqual(Follow.objects.count(), count_follow)
 
     def test_follow_user(self):
-        """Проверка того что пользователь не может подписаться сам на себя."""
+        """
+        Проверка того, что пользователь не может подписаться сам на себя.
+        Проверка того, что пользователь может подписаться только один раз.
+        """
+        OBJECT_MAGNIFICATION_FACTOR: int = 1
         count_follow = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
             args=[FollowTestsPosts.user.username]))
         self.assertEqual(Follow.objects.count(), count_follow)
+        self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            args=[FollowTestsPosts.author.username]))
+        self.assertEqual(Follow.objects.count(),
+                         count_follow + OBJECT_MAGNIFICATION_FACTOR)
+        self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            args=[FollowTestsPosts.author.username]))
+        self.assertEqual(Follow.objects.count(),
+                         count_follow + OBJECT_MAGNIFICATION_FACTOR)
+
 
     def test_follow_index(self):
         """Тест проверки ленты подписок."""
