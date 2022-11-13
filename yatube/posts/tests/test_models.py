@@ -38,11 +38,11 @@ class PostModelTest(TestCase):
         post_act = post.__str__()
         post_expected = post.text[:15]
         self.assertEqual(post_act, post_expected,
-                          'Метод __str__ модели post работает неправильно')
+                         'Метод __str__ модели post работает неправильно')
         group_act = group.__str__()
         group_expected = group.title
         self.assertEqual(group_act, group_expected,
-                          'Метод __str__ модели group работает неправильно')
+                         'Метод __str__ модели group работает неправильно')
 
     def test_verbose_name_post(self):
         """В полях verbose_name совпадает с ожидаемым."""
