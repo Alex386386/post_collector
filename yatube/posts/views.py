@@ -12,20 +12,20 @@ LIMIT_POST_COEFFICIENT: int = 10
 @cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all()
-    page_obj = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
+    page_object = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
     context = {
-        'page_obj': page_obj,
+        'page_object': page_object,
     }
     return render(request, 'posts/index.html', context)
 
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    posts_list_gr = group.posts.all()
-    page_obj = run_pag(posts_list_gr, request, LIMIT_POST_COEFFICIENT)
+    posts_list_group = group.posts.all()
+    page_object = run_pag(posts_list_group, request, LIMIT_POST_COEFFICIENT)
     context = {
         'group': group,
-        'page_obj': page_obj,
+        'page_object': page_object,
     }
     return render(request, 'posts/group_list.html', context)
 
@@ -33,7 +33,7 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
-    page_obj = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
+    page_object = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
     following = None
     if request.user.is_authenticated:
         following = Follow.objects.filter(
@@ -41,7 +41,7 @@ def profile(request, username):
         ).exists()
     context = {
         'author': author,
-        'page_obj': page_obj,
+        'page_object': page_object,
         'following': following,
     }
     return render(request, 'posts/profile.html', context)
@@ -115,9 +115,9 @@ def add_comment(request, post_id):
 def follow_index(request):
     post_list = Post.objects.select_related('author').filter(
         author__following__user=request.user)
-    page_obj = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
+    page_object = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)
     context = {
-        'page_obj': page_obj,
+        'page_object': page_object,
     }
     return render(request, 'posts/follow.html', context)
 
@@ -125,13 +125,9 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
-    if request.user.username != author.username:
-        follow = Follow.objects.filter(
-            user=request.user, author=author
-        ).exists()
-        if not follow:
-            Follow.objects.create(user=request.user, author=author)
-            return redirect('posts:profile', username=username)
+    if request.user.username == author.username:
+        return redirect('posts:profile', username=username)
+    Follow.objects.get_or_create(user=request.user, author=author)
     return redirect('posts:profile', username=username)
 
 

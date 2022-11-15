@@ -111,7 +111,7 @@ class PostCreateFormTests(TestCase):
         post = get_object_or_404(Post, id=PostCreateFormTests.post.id)
         response = self.authorized_client.post(
             reverse('posts:group_list', kwargs={'slug': 'test-slug'}))
-        self.assertNotIn(post, response.context['page_obj'])
+        self.assertNotIn(post, response.context['page_object'])
 
     def test_create_comments_post(self):
         """Проверка создания комментария авторизованным пользователем"""
