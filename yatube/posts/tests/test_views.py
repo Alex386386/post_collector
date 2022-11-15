@@ -86,12 +86,12 @@ class PostPagesTestsPosts(TestCase):
     def test_index_show_correct_context_posts(self):
         """Шаблон index сформирован с правильным контекстом."""
         response = self.guest_client.get(reverse('posts:index'))
-        first_object = response.context['page_object'][0]
+        first_object = response.context['page_obj'][0]
         index_context = [
             (first_object.author, PostPagesTestsPosts.user),
             (first_object.text, 'Тестовый пост'),
             (first_object.group, PostPagesTestsPosts.group),
-            (response.context['page_object'][0].image,
+            (response.context['page_obj'][0].image,
              PostPagesTestsPosts.post.image),
         ]
         for context, reverse_context in index_context:
@@ -104,9 +104,9 @@ class PostPagesTestsPosts(TestCase):
             'posts:group_list',
             kwargs={'slug': 'test-slug'}))
         group_context = [
-            (response.context['page_object'][0].group,
+            (response.context['page_obj'][0].group,
              PostPagesTestsPosts.group),
-            (response.context['page_object'][0].image,
+            (response.context['page_obj'][0].image,
              PostPagesTestsPosts.post.image),
         ]
         for context, reverse_context in group_context:
@@ -119,9 +119,9 @@ class PostPagesTestsPosts(TestCase):
             'posts:profile',
             args=[PostPagesTestsPosts.user]))
         profile_context = [
-            (response.context['page_object'][0].author,
+            (response.context['page_obj'][0].author,
              PostPagesTestsPosts.user),
-            (response.context['page_object'][0].image,
+            (response.context['page_obj'][0].image,
              PostPagesTestsPosts.post.image),
         ]
         for context, reverse_context in profile_context:
@@ -172,19 +172,19 @@ class PostPagesTestsPosts(TestCase):
         """При создании поста, тот отображается в нужных шаблонах."""
 
         response_index = self.guest_client.get(reverse('posts:index'))
-        post_index = response_index.context['page_object'][0].group
+        post_index = response_index.context['page_obj'][0].group
         self.assertEqual(post_index, PostPagesTestsPosts.post.group)
 
         response_group = self.guest_client.get(reverse(
             'posts:group_list',
             kwargs={'slug': 'test-slug'}))
-        post_group = response_group.context['page_object'][0].group
+        post_group = response_group.context['page_obj'][0].group
         self.assertEqual(post_group, PostPagesTestsPosts.post.group)
 
         response_profile = self.authorized_client.get(reverse(
             'posts:profile',
             args=[PostPagesTestsPosts.user]))
-        post_profile = response_profile.context['page_object'][0].group
+        post_profile = response_profile.context['page_obj'][0].group
         self.assertEqual(post_profile, PostPagesTestsPosts.post.group)
 
     def test_cache_index(self):
@@ -243,7 +243,7 @@ class PostPaginatorTestsPosts(TestCase):
         for value, number_of_post in url_number_first_page.items():
             with self.subTest(value=value):
                 response = self.guest_client.get(value)
-                self.assertEqual(len(response.context['page_object']),
+                self.assertEqual(len(response.context['page_obj']),
                                  number_of_post)
         url_number_second_page = {
             reverse('posts:index') + '?page=2': LIMIT_POST_COEFFICIENT2,
@@ -257,7 +257,7 @@ class PostPaginatorTestsPosts(TestCase):
         for value, number_of_post in url_number_second_page.items():
             with self.subTest(value=value):
                 response = self.guest_client.get(value)
-                self.assertEqual(len(response.context['page_object']),
+                self.assertEqual(len(response.context['page_obj']),
                                  number_of_post)
 
 
@@ -340,9 +340,9 @@ class FollowTestsPosts(TestCase):
             'posts:profile_follow',
             args=[FollowTestsPosts.author_two.username]))
         response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(response.context['page_object'][0].id,
+        self.assertEqual(response.context['page_obj'][0].id,
                          FollowTestsPosts.post.id)
         response = self.authorized_client_two.get(reverse(
             'posts:follow_index'))
-        self.assertNotEqual(response.context['page_object'][0].id,
+        self.assertNotEqual(response.context['page_obj'][0].id,
                             FollowTestsPosts.post.id)
