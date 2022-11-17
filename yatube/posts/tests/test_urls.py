@@ -1,11 +1,9 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
-from posts.models import Post, Group
+from posts.models import Post, Group, User
 from django.core.cache import cache
-
-User = get_user_model()
+from django.urls import reverse
 
 
 class URLTestsPosts(TestCase):
@@ -23,24 +21,31 @@ class URLTestsPosts(TestCase):
             text='Тестовый пост',
             group=cls.group,
         )
+        cls.index = reverse('posts:index')
+        cls.group_page = reverse('posts:group_list',
+                                 kwargs={'slug': 'test-slug'})
+        cls.profile = reverse('posts:profile', args=[cls.user])
+        cls.detail = reverse('posts:post_detail', args=[cls.post.id])
+        cls.create = reverse('posts:post_create')
+        cls.edit = reverse('posts:post_edit', args=[cls.post.id])
 
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
-        self.authorized_client.force_login(URLTestsPosts.user)
+        self.authorized_client.force_login(self.user)
 
     def tearDown(self):
         cache.clear()
 
     def test_urls_exists_at_desired_location_posts(self):
         """URL-адрес доступен."""
-        url_names_code = {
-            '/': HTTPStatus.OK,
-            '/group/test-slug/': HTTPStatus.OK,
-            '/profile/auth/': HTTPStatus.OK,
-            f'/posts/{URLTestsPosts.post.id}/': HTTPStatus.OK,
-        }
-        for address, http_response in url_names_code.items():
+        url_names_code = (
+            (self.index, HTTPStatus.OK),
+            (self.group_page, HTTPStatus.OK),
+            (self.profile, HTTPStatus.OK),
+            (self.detail, HTTPStatus.OK),
+        )
+        for address, http_response in url_names_code:
             with self.subTest(address=address):
                 response = self.guest_client.get(address)
                 self.assertEqual(response.status_code, http_response,
@@ -48,11 +53,11 @@ class URLTestsPosts(TestCase):
 
     def test_urls_authorized_exists_at_desired_location_posts(self):
         """URL-адрес доступен авторизованному пользователю."""
-        url_names_code = {
-            '/create/': HTTPStatus.OK,
-            f'/posts/{URLTestsPosts.post.id}/edit/': HTTPStatus.OK,
-        }
-        for address, http_response in url_names_code.items():
+        url_names_code = (
+            (self.create, HTTPStatus.OK),
+            (self.detail, HTTPStatus.OK),
+        )
+        for address, http_response in url_names_code:
             with self.subTest(address=address):
                 response = self.authorized_client.get(address)
                 self.assertEqual(response.status_code, http_response,
@@ -60,11 +65,11 @@ class URLTestsPosts(TestCase):
 
     def test_url_redirect_anonymous_posts(self):
         """Страница перенаправляет анонимного пользователя."""
-        url_names_code = {
-            '/create/': HTTPStatus.FOUND,
-            f'/posts/{URLTestsPosts.post.id}/edit/': HTTPStatus.FOUND,
-        }
-        for address, http_response in url_names_code.items():
+        url_names_code = (
+            (self.create, HTTPStatus.FOUND),
+            (self.edit, HTTPStatus.FOUND),
+        )
+        for address, http_response in url_names_code:
             with self.subTest(address=address):
                 response = self.guest_client.get(address)
                 self.assertEqual(response.status_code, http_response,
@@ -72,25 +77,25 @@ class URLTestsPosts(TestCase):
 
     def test_url_redirect_anonymous_address_posts(self):
         """Страница перенаправляет анонимного пользователя."""
-        url_names = {
-            '/create/': '/auth/login/?next=/create/',
-            f'/posts/{URLTestsPosts.post.id}/edit/':
-                f'/auth/login/?next=/posts/{URLTestsPosts.post.id}/edit/',
-        }
-        for address, redirect_address in url_names.items():
+        url_names = (
+            (self.create, '/auth/login/?next=/create/'),
+            (self.edit,
+             f'/auth/login/?next=/posts/{self.post.id}/edit/'),
+        )
+        for address, redirect_address in url_names:
             with self.subTest(address=address):
                 response = self.guest_client.get(address, follow=True)
                 self.assertRedirects(response, redirect_address)
 
     def test_urls_uses_correct_template_posts(self):
         """URL-адрес использует соответствующий шаблон."""
-        templates_url_names = {
-            '/': 'posts/index.html',
-            '/group/test-slug/': 'posts/group_list.html',
-            '/profile/auth/': 'posts/profile.html',
-            f'/posts/{URLTestsPosts.post.id}/': 'posts/post_detail.html',
-        }
-        for address, template in templates_url_names.items():
+        templates_url_names = (
+            (self.index, 'posts/index.html'),
+            (self.group_page, 'posts/group_list.html'),
+            (self.profile, 'posts/profile.html'),
+            (self.detail, 'posts/post_detail.html'),
+        )
+        for address, template in templates_url_names:
             with self.subTest(address=address):
                 response = self.guest_client.get(address)
                 self.assertTemplateUsed(response, template,
@@ -101,11 +106,11 @@ class URLTestsPosts(TestCase):
         URL-адрес использует соответствующий шаблон
         для авторизованного пользователя
         """
-        templates_url_names = {
-            '/create/': 'posts/create_post.html',
-            f'/posts/{URLTestsPosts.post.id}/edit/': 'posts/create_post.html',
-        }
-        for address, template in templates_url_names.items():
+        templates_url_names = (
+            (self.create, 'posts/create_post.html'),
+            (self.edit, 'posts/create_post.html'),
+        )
+        for address, template in templates_url_names:
             with self.subTest(address=address):
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template,

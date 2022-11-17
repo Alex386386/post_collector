@@ -1,10 +1,10 @@
-from core.models import CreatedModel
 from django.contrib.auth import get_user_model
 from django.db import models
 
-User = get_user_model()
+from core.models import CreatedModel
+from core.work_constants import TITLE_LIMITATION
 
-TITLE_LIMITATION = 15
+User = get_user_model()
 
 
 class Group(models.Model):

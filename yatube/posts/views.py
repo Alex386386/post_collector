@@ -2,14 +2,13 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.cache import cache_page
 
+from core.work_constants import LIMIT_POST_COEFFICIENT, NUMBER_OF_SECONDS
 from .forms import PostForm, CommentForm
 from .models import Post, Group, User, Follow
 from .utils import run_pag
 
-LIMIT_POST_COEFFICIENT: int = 10
 
-
-@cache_page(20, key_prefix='index_page')
+@cache_page(NUMBER_OF_SECONDS, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all()
     page_obj = run_pag(post_list, request, LIMIT_POST_COEFFICIENT)

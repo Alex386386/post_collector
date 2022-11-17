@@ -1,9 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from posts.models import Group, Post, Comment, Follow
-
-User = get_user_model()
+from posts.models import Group, Post, Comment, Follow, User
 
 
 class PostModelTest(TestCase):
@@ -33,20 +30,20 @@ class PostModelTest(TestCase):
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
-        post = PostModelTest.post
-        group = PostModelTest.group
-        post_act = post.__str__()
-        post_expected = post.text[:15]
-        self.assertEqual(post_act, post_expected,
-                         'Метод __str__ модели post работает неправильно')
-        group_act = group.__str__()
-        group_expected = group.title
-        self.assertEqual(group_act, group_expected,
-                         'Метод __str__ модели group работает неправильно')
+        post = self.post
+        group = self.group
+        model_str = (
+            (post.__str__(), post.text[:15]),
+            (group.__str__(), group.title),
+        )
+        for act, expected in model_str:
+            with self.subTest(act=act):
+                self.assertEqual(act, expected,
+                                 f'__str__ метод модели работает неправильно')
 
     def test_verbose_name_post(self):
-        """В полях verbose_name совпадает с ожидаемым."""
-        post = PostModelTest.post
+        """В полях модели post, verbose_name совпадает с ожидаемым."""
+        post = self.post
         field_verbose = {
             'text': 'Текст поста',
             'pub_date': 'Дата публикации',
@@ -59,8 +56,8 @@ class PostModelTest(TestCase):
                     post._meta.get_field(value).verbose_name, expected)
 
     def test_verbose_name_group(self):
-        """В полях verbose_name совпадает с ожидаемым."""
-        group = PostModelTest.group
+        """В полях модели group, verbose_name совпадает с ожидаемым."""
+        group = self.group
         field_verbose = {
             'title': 'Название группы',
             'slug': 'slug-значение группы',
@@ -72,8 +69,8 @@ class PostModelTest(TestCase):
                     group._meta.get_field(value).verbose_name, expected)
 
     def test_verbose_name_comment(self):
-        """В полях verbose_name совпадает с ожидаемым."""
-        comment = PostModelTest.comment
+        """В полях модели comment, verbose_name совпадает с ожидаемым."""
+        comment = self.comment
         field_verbose = {
             'post': 'Комментарий поста',
             'author': 'Автор комментария',
@@ -85,8 +82,8 @@ class PostModelTest(TestCase):
                     comment._meta.get_field(value).verbose_name, expected)
 
     def test_verbose_name_follow(self):
-        """В полях verbose_name совпадает с ожидаемым."""
-        follow = PostModelTest.follow
+        """В полях модели follow, verbose_name совпадает с ожидаемым."""
+        follow = self.follow
         field_verbose = {
             'user': 'Подписчик',
             'author': 'Автор на которого подписываются',
@@ -97,8 +94,8 @@ class PostModelTest(TestCase):
                     follow._meta.get_field(value).verbose_name, expected)
 
     def test_help_text(self):
-        """В полях help_text совпадает с ожидаемым."""
-        post = PostModelTest.post
+        """В полях модели post, help_text совпадает с ожидаемым."""
+        post = self.post
         field_help_texts = {
             'text': 'Введите текст поста',
             'group': 'Группа, к которой будет относиться пост',
