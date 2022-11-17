@@ -39,7 +39,7 @@ class PostModelTest(TestCase):
         for act, expected in model_str:
             with self.subTest(act=act):
                 self.assertEqual(act, expected,
-                                 f'__str__ метод модели работает неправильно')
+                                 '__str__ метод модели работает неправильно')
 
     def test_verbose_name_post(self):
         """В полях модели post, verbose_name совпадает с ожидаемым."""
