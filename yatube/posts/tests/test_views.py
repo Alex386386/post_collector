@@ -214,9 +214,8 @@ class PostPaginatorTestsPosts(TestCase):
         for value in url_number_second_page:
             with self.subTest(value=value):
                 template_address, argument = value
-                response = self.guest_client.get(reverse(template_address,
-                                                         args=argument) +
-                                                 second_page)
+                response = self.guest_client.get(
+                    reverse(template_address, args=argument) + second_page)
                 self.assertEqual(len(response.context['page_obj']),
                                  LIMIT_POST_COEFFICIENT2)
 
