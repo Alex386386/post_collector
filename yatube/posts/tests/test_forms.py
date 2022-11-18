@@ -34,14 +34,13 @@ class PostCreateFormTests(TestCase):
             post=cls.post,
             text='Тестовый комментарий',
         )
-        cls.index = reverse('posts:index')
-        cls.group_page = reverse('posts:group_list',
-                                 kwargs={'slug': 'test-slug'})
-        cls.profile = reverse('posts:profile', args=[cls.user])
-        cls.detail = reverse('posts:post_detail', args=[cls.post.id])
-        cls.create = reverse('posts:post_create')
-        cls.edit = reverse('posts:post_edit', args=[cls.post.id])
-        cls.add_comment = reverse('posts:add_comment', args=[cls.post.id])
+        cls.index = ('posts:index', None)
+        cls.group_page = ('posts:group_list', ['test-slug'])
+        cls.profile = ('posts:profile', [cls.user])
+        cls.detail = ('posts:post_detail', [cls.post.id])
+        cls.create = ('posts:post_create', None)
+        cls.edit = ('posts:post_edit', [cls.post.id])
+        cls.add_comment = ('posts:add_comment', [cls.post.id])
 
     @classmethod
     def tearDownClass(cls):
@@ -74,12 +73,15 @@ class PostCreateFormTests(TestCase):
             'group': self.group.id,
             'image': uploaded,
         }
+        template_address, argument = self.create
         response = self.authorized_client.post(
-            self.create,
+            reverse(template_address, args=argument),
             data=form_data,
             follow=True
         )
-        self.assertRedirects(response, self.profile)
+        template_address, argument = self.profile
+        self.assertRedirects(response, reverse(template_address,
+                                               args=argument))
         self.assertEqual(Post.objects.count(),
                          post_count + OBJECT_MAGNIFICATION_FACTOR)
         self.assertTrue(
@@ -106,15 +108,20 @@ class PostCreateFormTests(TestCase):
             'text': self.post.text,
             'group': '',
         }
+        template_address, argument = self.edit
         response = self.authorized_client.post(
-            self.edit,
+            reverse(template_address, args=argument),
             data=form_data,
             follow=True
         )
-        self.assertRedirects(response, self.detail)
+        template_address, argument = self.detail
+        self.assertRedirects(response, reverse(template_address,
+                                               args=argument))
         self.assertEqual(Post.objects.count(), post_count)
         post = get_object_or_404(Post, id=self.post.id)
-        response = self.authorized_client.post(self.group_page)
+        template_address, argument = self.group_page
+        response = self.authorized_client.post(reverse(template_address,
+                                                       args=argument))
         self.assertNotIn(post, response.context['page_obj'])
 
     def test_create_comments_post(self):
@@ -124,22 +131,24 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый текст комментария',
             'post': self.post.id,
         }
+        template_address, argument = self.add_comment
         response = self.authorized_client.post(
-            self.add_comment,
+            reverse(template_address, args=argument),
             data=form_data,
             follow=True
         )
-        # Проверяем что после создания комментария
+        template_address, argument = self.detail
         # пользователь был перенаправлен на страницу post_detail
-        self.assertRedirects(response, self.detail)
+        self.assertRedirects(response, reverse(template_address,
+                                               args=argument))
         # # Проверяем что в БД создался новый комментарий
         self.assertEqual(Comment.objects.count(),
                          comment_count + OBJECT_MAGNIFICATION_FACTOR)
+        context = response.context['comments'][0]
         comment_attribute = (
-            (response.context['comments'][0].text,
-             'Тестовый текст комментария'),
-            (response.context['comments'][0].post.id, self.post.id),
-            (response.context['comments'][0].author, self.user),
+            (context.text, 'Тестовый текст комментария'),
+            (context.post.id, self.post.id),
+            (context.author, self.user),
         )
         for comment_context, attribute in comment_attribute:
             with self.subTest(comment_context=comment_context):
@@ -156,8 +165,9 @@ class PostCreateFormTests(TestCase):
             'text': 'Тестовый текст комментария',
             'post': self.post.id,
         }
+        template_address, argument = self.add_comment
         self.guest_client.post(
-            self.add_comment,
+            reverse(template_address, args=argument),
             data=form_data,
             follow=True
         )

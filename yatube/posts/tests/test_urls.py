@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
-from django.test import TestCase, Client
-from posts.models import Post, Group, User
 from django.core.cache import cache
+from django.test import TestCase, Client
 from django.urls import reverse
+
+from posts.models import Post, Group, User
 
 
 class URLTestsPosts(TestCase):
@@ -21,13 +22,25 @@ class URLTestsPosts(TestCase):
             text='Тестовый пост',
             group=cls.group,
         )
-        cls.index = reverse('posts:index')
-        cls.group_page = reverse('posts:group_list',
-                                 kwargs={'slug': 'test-slug'})
-        cls.profile = reverse('posts:profile', args=[cls.user])
-        cls.detail = reverse('posts:post_detail', args=[cls.post.id])
-        cls.create = reverse('posts:post_create')
-        cls.edit = reverse('posts:post_edit', args=[cls.post.id])
+        cls.index = ('posts:index', None)
+        cls.group_page = ('posts:group_list', ['test-slug'])
+        cls.profile = ('posts:profile', [cls.user])
+        cls.detail = ('posts:post_detail', [cls.post.id])
+        cls.create = ('posts:post_create', None)
+        cls.edit = ('posts:post_edit', [cls.post.id])
+
+        cls.url_create_detail = (cls.create, cls.detail)
+        cls.url_create_edit = (cls.create, cls.edit)
+        cls.create_redirect = (
+            cls.create,
+            '/auth/login/?next=/create/',
+            'posts/create_post.html',
+        )
+        cls.edit_redirect = (
+            cls.edit,
+            f'/auth/login/?next=/posts/{cls.post.id}/edit/',
+            'posts/create_post.html',
+        )
 
     def setUp(self):
         self.guest_client = Client()
@@ -38,53 +51,54 @@ class URLTestsPosts(TestCase):
         cache.clear()
 
     def test_urls_exists_at_desired_location_posts(self):
-        """URL-адрес доступен."""
-        url_names_code = (
-            (self.index, HTTPStatus.OK),
-            (self.group_page, HTTPStatus.OK),
-            (self.profile, HTTPStatus.OK),
-            (self.detail, HTTPStatus.OK),
-        )
-        for address, http_response in url_names_code:
+        """URL-адрес доступен для неавторизованного пользователя."""
+        url_names_code = [
+            self.index,
+            self.group_page,
+            self.profile,
+            self.detail,
+        ]
+        for address in url_names_code:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, http_response,
+                template_address, argument = address
+                response = self.guest_client.get(reverse(template_address,
+                                                         args=argument))
+                self.assertEqual(response.status_code, HTTPStatus.OK,
                                  'status code не соответствует ожидаемому')
 
     def test_urls_authorized_exists_at_desired_location_posts(self):
-        """URL-адрес доступен авторизованному пользователю."""
-        url_names_code = (
-            (self.create, HTTPStatus.OK),
-            (self.detail, HTTPStatus.OK),
-        )
-        for address, http_response in url_names_code:
+        """URL-адрес доступен."""
+        for address in self.url_create_detail:
             with self.subTest(address=address):
-                response = self.authorized_client.get(address)
-                self.assertEqual(response.status_code, http_response,
+                template_address, argument = address
+                response = self.authorized_client.get(reverse(template_address,
+                                                              args=argument))
+                self.assertEqual(response.status_code, HTTPStatus.OK,
                                  'status code не соответствует ожидаемому')
 
     def test_url_redirect_anonymous_posts(self):
         """Страница перенаправляет анонимного пользователя."""
-        url_names_code = (
-            (self.create, HTTPStatus.FOUND),
-            (self.edit, HTTPStatus.FOUND),
-        )
-        for address, http_response in url_names_code:
+        for address in self.url_create_edit:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, http_response,
+                template_address, argument = address
+                response = self.guest_client.get(reverse(template_address,
+                                                         args=argument))
+                self.assertEqual(response.status_code, HTTPStatus.FOUND,
                                  'status code не соответствует ожидаемому')
 
     def test_url_redirect_anonymous_address_posts(self):
         """Страница перенаправляет анонимного пользователя."""
         url_names = (
-            (self.create, '/auth/login/?next=/create/'),
-            (self.edit,
-             f'/auth/login/?next=/posts/{self.post.id}/edit/'),
+            self.create_redirect,
+            self.edit_redirect,
         )
-        for address, redirect_address in url_names:
+        for address in url_names:
             with self.subTest(address=address):
-                response = self.guest_client.get(address, follow=True)
+                template, redirect_address, _ = address
+                template_address, argument = template
+                response = self.guest_client.get(reverse(template_address,
+                                                         args=argument),
+                                                 follow=True)
                 self.assertRedirects(response, redirect_address)
 
     def test_urls_uses_correct_template_posts(self):
@@ -97,7 +111,9 @@ class URLTestsPosts(TestCase):
         )
         for address, template in templates_url_names:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
+                template_address, argument = address
+                response = self.guest_client.get(reverse(template_address,
+                                                         args=argument))
                 self.assertTemplateUsed(response, template,
                                         f'не доступен данный адрес {address}')
 
@@ -107,13 +123,16 @@ class URLTestsPosts(TestCase):
         для авторизованного пользователя
         """
         templates_url_names = (
-            (self.create, 'posts/create_post.html'),
-            (self.edit, 'posts/create_post.html'),
+            self.create_redirect,
+            self.edit_redirect,
         )
-        for address, template in templates_url_names:
+        for address in templates_url_names:
             with self.subTest(address=address):
-                response = self.authorized_client.get(address)
-                self.assertTemplateUsed(response, template,
+                template, _, page = address
+                template_address, argument = template
+                response = self.authorized_client.get(reverse(template_address,
+                                                              args=argument))
+                self.assertTemplateUsed(response, page,
                                         'не доступен данный адрес')
 
     def test_url_unexisting_page_posts(self):
