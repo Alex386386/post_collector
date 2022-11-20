@@ -14,7 +14,7 @@ from core.constants_tests import (LIMIT_POST_COEFFICIENT1,
                                   LIMIT_POST_TEST,
                                   )
 from posts.models import Post, Group, Follow, User
-from posts.utils import create_post_generator
+from posts.utils import create_post
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -50,7 +50,7 @@ class PostPagesTestsPosts(TestCase):
             image=cls.uploaded,
         )
         cls.index = ('posts:index', None)
-        cls.group_page = ('posts:group_list', ['test-slug'])
+        cls.group_page = ('posts:group_list', [cls.group.slug])
         cls.profile = ('posts:profile', [cls.user])
         cls.detail = ('posts:post_detail', [cls.post.id])
         cls.create = ('posts:post_create', None)
@@ -114,11 +114,11 @@ class PostPagesTestsPosts(TestCase):
         template_address, argument = self.create
         response = self.authorized_client.get(reverse(template_address,
                                                       args=argument))
-        form_fields = {
-            'text': forms.fields.CharField,
-            'group': forms.fields.ChoiceField,
-        }
-        for value, expected in form_fields.items():
+        form_fields = (
+            ('text', forms.fields.CharField),
+            ('group', forms.fields.ChoiceField),
+        )
+        for value, expected in form_fields:
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
                 self.assertIsInstance(form_field, expected)
@@ -180,10 +180,9 @@ class PostPaginatorTestsPosts(TestCase):
             slug='test-slug',
             description='Тестовое описание',
         )
-        generator = create_post_generator(LIMIT_POST_TEST, cls.user, cls.group)
-        cls.post = Post.objects.bulk_create(generator)
+        cls.post = create_post(LIMIT_POST_TEST, cls.user, cls.group)
         cls.index = ('posts:index', None)
-        cls.group_page = ('posts:group_list', ['test-slug'])
+        cls.group_page = ('posts:group_list', [cls.group.slug])
         cls.profile = ('posts:profile', [cls.user])
 
     def setUp(self):
@@ -215,7 +214,7 @@ class PostPaginatorTestsPosts(TestCase):
             with self.subTest(value=value):
                 template_address, argument = value
                 response = self.guest_client.get(
-                    reverse(template_address, args=argument) + second_page)
+                    f'{reverse(template_address, args=argument)}{second_page}')
                 self.assertEqual(len(response.context['page_obj']),
                                  LIMIT_POST_COEFFICIENT2)
 

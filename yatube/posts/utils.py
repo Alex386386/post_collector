@@ -5,7 +5,7 @@ from .models import Post
 
 def run_pag(list_obj, request, filters):
     """
-    Функция паджинатора для переработки списка постов
+    Функция Paginator для переработки списка постов
     в объект типа page_object
     """
     paginator = Paginator(list_obj, filters)
@@ -13,7 +13,7 @@ def run_pag(list_obj, request, filters):
     return paginator.get_page(page_number)
 
 
-def create_post_generator(post_limit, author, group):
+def post_generator(post_limit, author, group):
     """
     Генератор создания постов с количеством равном принятому аргументу
     """
@@ -24,3 +24,12 @@ def create_post_generator(post_limit, author, group):
             group=group,
         )
         id_text += 1
+
+
+def create_post(post_limit, author, group):
+    """Функция создания постов с использованием генератора"""
+    return Post.objects.bulk_create(post_generator(
+        post_limit,
+        author,
+        group,
+    ))

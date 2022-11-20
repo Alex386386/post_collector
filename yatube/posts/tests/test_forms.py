@@ -19,23 +19,36 @@ class PostCreateFormTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
-        cls.group = Group.objects.create(
+        cls.first_group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
+            description='Тестовое описание',
+        )
+        cls.second_group = Group.objects.create(
+            title='Тестовая группа',
+            slug='second_test-slug',
             description='Тестовое описание',
         )
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый пост',
-            group=cls.group,
+            group=cls.first_group,
         )
         cls.comment = Comment.objects.create(
             author=cls.user,
             post=cls.post,
             text='Тестовый комментарий',
         )
+        cls.small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
         cls.index = ('posts:index', None)
-        cls.group_page = ('posts:group_list', ['test-slug'])
+        cls.group_page = ('posts:group_list', [cls.first_group.slug])
         cls.profile = ('posts:profile', [cls.user])
         cls.detail = ('posts:post_detail', [cls.post.id])
         cls.create = ('posts:post_create', None)
@@ -55,22 +68,14 @@ class PostCreateFormTests(TestCase):
     def test_create_new_post(self):
         """Проверка создания нового поста. И сравнение с имеющимся постом."""
         post_count = Post.objects.count()
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
         uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_gif,
+            content=self.small_gif,
             content_type='image/gif'
         )
         form_data = {
             'text': self.post.text,
-            'group': self.group.id,
+            'group': self.first_group.id,
             'image': uploaded,
         }
         template_address, argument = self.create
@@ -86,15 +91,16 @@ class PostCreateFormTests(TestCase):
                          post_count + OBJECT_MAGNIFICATION_FACTOR)
         self.assertTrue(
             Post.objects.filter(
-                text='Тестовый пост',
-                group_id=self.group.id,
+                text=self.post.text,
+                group_id=self.first_group.id,
                 image='posts/small.gif',
             ).exists()
         )
-        post = Post.objects.last()
+        post = Post.objects.first()
         attributes_post = (
             (post.text, self.post.text),
-            (post.group, self.group),
+            (post.group, self.first_group),
+            (post.image.read(), self.small_gif),
         )
         for attribut, expected in attributes_post:
             with self.subTest(attribut=attribut):
@@ -103,26 +109,43 @@ class PostCreateFormTests(TestCase):
 
     def test_create_edit_post(self):
         """Проверка редактирования нового поста."""
+
         post_count = Post.objects.count()
+
         form_data = {
-            'text': self.post.text,
-            'group': '',
+            'text': 'Изменённый тестовый пост',
+            'group': self.second_group.id,
         }
+
         template_address, argument = self.edit
+
         response = self.authorized_client.post(
             reverse(template_address, args=argument),
             data=form_data,
             follow=True
         )
         template_address, argument = self.detail
+
         self.assertRedirects(response, reverse(template_address,
                                                args=argument))
         self.assertEqual(Post.objects.count(), post_count)
+
         post = get_object_or_404(Post, id=self.post.id)
+
         template_address, argument = self.group_page
-        response = self.authorized_client.post(reverse(template_address,
-                                                       args=argument))
-        self.assertNotIn(post, response.context['page_obj'])
+
+        response_context = self.authorized_client.post(
+            reverse(template_address, args=argument)).context['page_obj']
+        self.assertNotIn(post, response_context)
+
+        attributes_post = (
+            (post.text, form_data['text']),
+            (post.group.id, form_data['group']),
+        )
+        for attribut, expected in attributes_post:
+            with self.subTest(attribut=attribut):
+                self.assertEqual(attribut, expected,
+                                 'Атрибут не соответствует ожидаемому')
 
     def test_create_comments_post(self):
         """Проверка создания комментария авторизованным пользователем"""
@@ -146,8 +169,8 @@ class PostCreateFormTests(TestCase):
                          comment_count + OBJECT_MAGNIFICATION_FACTOR)
         context = response.context['comments'][0]
         comment_attribute = (
-            (context.text, 'Тестовый текст комментария'),
-            (context.post.id, self.post.id),
+            (context.text, form_data['text']),
+            (context.post.id, form_data['post']),
             (context.author, self.user),
         )
         for comment_context, attribute in comment_attribute:

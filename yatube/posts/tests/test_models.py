@@ -45,32 +45,30 @@ class PostModelTest(TestCase):
     def test_verbose_name(self):
         """В полях модели post, verbose_name совпадает с ожидаемым."""
         models = [
-            {self.post: {
-                'text': 'Текст поста',
-                'pub_date': 'Дата публикации',
-                'author': 'Автор',
-                'group': 'Группа'}},
-            {self.group: {
-                'title': 'Название группы',
-                'slug': 'slug-значение группы',
-                'description': 'Описание группы'}},
-            {self.comment: {
-                'post': 'Комментарий поста',
-                'author': 'Автор комментария',
-                'text': 'Текст комментария'}},
-            {self.follow: {
-                'user': 'Подписчик',
-                'author': 'Автор на которого подписываются'}}
+            (self.post, (
+                ('text', 'Текст поста'),
+                ('pub_date', 'Дата публикации'),
+                ('author', 'Автор'),
+                ('group', 'Группа'))),
+            (self.group, (
+                ('title', 'Название группы'),
+                ('slug', 'slug-значение группы'),
+                ('description', 'Описание группы'))),
+            (self.comment, (
+                ('post', 'Комментарий поста'),
+                ('author', 'Автор комментария'),
+                ('text', 'Текст комментария'))),
+            (self.follow, (
+                ('user', 'Подписчик'),
+                ('author', 'Автор на которого подписываются')))
         ]
-        for models_dict in models:
-            for model, fields in models_dict.items():
-                with self.subTest(model=model):
-                    for value, expected in fields.items():
-                        with self.subTest(value=value):
-                            self.assertEqual(
-                                model._meta.get_field(value).verbose_name,
-                                expected
-                            )
+        for model, fields in models:
+            for value, expected in fields:
+                with self.subTest(value=value):
+                    self.assertEqual(
+                        model._meta.get_field(value).verbose_name,
+                        expected
+                    )
 
     def test_help_text(self):
         """В полях модели post, help_text совпадает с ожидаемым."""
