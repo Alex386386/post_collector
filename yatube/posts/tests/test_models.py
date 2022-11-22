@@ -32,8 +32,8 @@ class PostModelTest(TestCase):
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         model_str = (
-            (self.post.__str__(), self.post.text[:TITLE_LIMITATION]),
-            (self.group.__str__(), self.group.title),
+            (str(self.post), self.post.text[:TITLE_LIMITATION]), # .__str__()
+            (str(self.group), self.group.title),
         )
         for model_method, expected in model_str:
             with self.subTest(model_method=model_method):

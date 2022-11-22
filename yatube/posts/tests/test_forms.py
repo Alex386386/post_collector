@@ -29,16 +29,6 @@ class PostCreateFormTests(TestCase):
             slug='second_test-slug',
             description='Тестовое описание',
         )
-        cls.post = Post.objects.create(
-            author=cls.user,
-            text='Тестовый пост',
-            group=cls.first_group,
-        )
-        cls.comment = Comment.objects.create(
-            author=cls.user,
-            post=cls.post,
-            text='Тестовый комментарий',
-        )
         cls.small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -46,6 +36,22 @@ class PostCreateFormTests(TestCase):
             b'\x00\x00\x00\x2C\x00\x00\x00\x00'
             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
             b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=cls.small_gif,
+            content_type='image/gif'
+        )
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Тестовый пост',
+            group=cls.first_group,
+            image=uploaded,
+        )
+        cls.comment = Comment.objects.create(
+            author=cls.user,
+            post=cls.post,
+            text='Тестовый комментарий',
         )
         cls.index = ('posts:index', None)
         cls.group_page = ('posts:group_list', [cls.first_group.slug])
@@ -89,18 +95,12 @@ class PostCreateFormTests(TestCase):
                                                args=argument))
         self.assertEqual(Post.objects.count(),
                          post_count + OBJECT_MAGNIFICATION_FACTOR)
-        self.assertTrue(
-            Post.objects.filter(
-                text=self.post.text,
-                group_id=self.first_group.id,
-                image='posts/small.gif',
-            ).exists()
-        )
         post = Post.objects.first()
         attributes_post = (
+            (post.author, self.user),
             (post.text, self.post.text),
             (post.group, self.first_group),
-            (post.image.read(), self.small_gif),
+            (post.image.read(), self.post.image.read()),
         )
         for attribut, expected in attributes_post:
             with self.subTest(attribut=attribut):
@@ -139,8 +139,10 @@ class PostCreateFormTests(TestCase):
         self.assertNotIn(post, response_context)
 
         attributes_post = (
+            (post.author, self.user),
             (post.text, form_data['text']),
             (post.group.id, form_data['group']),
+            (post.image.read(), self.small_gif),
         )
         for attribut, expected in attributes_post:
             with self.subTest(attribut=attribut):

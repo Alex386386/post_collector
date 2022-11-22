@@ -266,13 +266,13 @@ class FollowTestsPosts(TestCase):
         """Тест создания и удаления подписки."""
         count_follow = Follow.objects.count()
         template_address, argument = self.first_author_profile_follow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         self.assertEqual(Follow.objects.count(),
                          count_follow + OBJECT_MAGNIFICATION_FACTOR)
         template_address, argument = self.first_author_profile_unfollow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         self.assertEqual(Follow.objects.count(), count_follow)
 
     def test_follow_user_few_times(self):
@@ -281,15 +281,15 @@ class FollowTestsPosts(TestCase):
         """
         count_follow = Follow.objects.count()
         template_address, argument = self.first_author_profile_follow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         # Проверяем, создалась ли подписка
         self.assertEqual(Follow.objects.count(),
                          count_follow + OBJECT_MAGNIFICATION_FACTOR)
         new_count_follow = Follow.objects.count()
         # Попытка создать ещё одну подписку с такими же параметрами
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         # Проверка того что подписка не создалась
         self.assertEqual(Follow.objects.count(), new_count_follow)
 
@@ -299,15 +299,15 @@ class FollowTestsPosts(TestCase):
         """
         count_follow = Follow.objects.count()
         template_address, argument = self.first_user_profile_follow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         self.assertEqual(Follow.objects.count(), count_follow)
 
     def test_follow_index_correct(self):
         """Тест проверки корректного отображения ленты подписок."""
         template_address, argument = self.first_author_profile_follow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         template_address, _ = self.follow_index
         response = self.first_authorized_client.get(reverse(template_address))
         # Проверяем что в ленте подписок находиться ожидаемый пост
@@ -320,11 +320,11 @@ class FollowTestsPosts(TestCase):
         на странице ленты находятся ожидаемые посты
         """
         template_address, argument = self.first_author_profile_follow
-        self.first_authorized_client.get(reverse(template_address,
-                                                 args=argument))
+        self.first_authorized_client.get(
+            reverse(template_address, args=argument))
         template_address, argument = self.second_author_profile_follow
-        self.second_authorized_client.get(reverse(template_address,
-                                                  args=argument))
+        self.second_authorized_client.get(
+            reverse(template_address, args=argument))
         template_address, _ = self.follow_index
         response = self.second_authorized_client.get(reverse(template_address))
         # Проверяем что в ленте подписок второго клиента нет поста
