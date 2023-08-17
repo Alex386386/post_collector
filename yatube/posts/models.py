@@ -75,7 +75,7 @@ class Comment(CreatedModel):
         verbose_name='Текст комментария',
         help_text='Введите текст комментария',
     )
-
+    
     class Meta:
         ordering = ('-pub_date',)
 

@@ -52,6 +52,5 @@ class FollowAdmin(admin.ModelAdmin):
         'user',
         'author',
     )
-    search_fields = ('user',)
-    search_fields = ('author',)
+    search_fields = ('user', 'author',)
     empty_value_display = '-пусто-'
