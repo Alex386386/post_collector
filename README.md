@@ -1,4 +1,4 @@
-# Yatube
+# Post_collector
 
 ### Описание
 
@@ -11,11 +11,13 @@
 Python 3.7, Django 2.2.16
 
 ### Установка, Как запустить проект:
-https://github.com/Alex386386/hw_05_final
+
 Клонировать репозиторий и перейти в него в командной строке:
 
+https://github.com/Alex386386/post_collector
+
 ```
-git@github.com:Alex386386/hw_05_final
+git@github.com:Alex386386/post_collector
 ```
 
 ```
